@@ -4,7 +4,7 @@ import { AlertTriangle, Brain, Wrench, Info, Bell } from "lucide-react";
 
 const priorityStyles = {
   high: "border-l-destructive bg-destructive/5",
-  medium: "border-l-neon-yellow bg-neon-yellow/5",
+  medium: "border-l-[hsl(38,92%,50%)] bg-[hsl(38,92%,50%)]/5",
   low: "border-l-muted-foreground bg-transparent",
 };
 
@@ -18,17 +18,19 @@ const typeIcons = {
 const NotificationsPanel = () => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7 }}
-      className="glass-card p-4"
+      transition={{ delay: 0.5 }}
+      className="card-elevated p-4"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-primary" />
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Bell className="w-4 h-4 text-primary" />
+          </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Alerts & Notifications</h3>
-            <p className="text-[10px] text-muted-foreground font-mono">{notifications.filter(n => !n.read).length} unread</p>
+            <h3 className="text-sm font-semibold text-foreground">Alerts</h3>
+            <p className="text-xs text-muted-foreground">{notifications.filter(n => !n.read).length} unread</p>
           </div>
         </div>
       </div>
@@ -38,9 +40,9 @@ const NotificationsPanel = () => {
           return (
             <motion.div
               key={notif.id}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 + i * 0.05 }}
+              transition={{ delay: 0.6 + i * 0.04 }}
               className={`border-l-2 rounded-r-lg p-3 ${priorityStyles[notif.priority]} ${!notif.read ? "" : "opacity-60"}`}
             >
               <div className="flex items-start gap-2">
