@@ -22,7 +22,7 @@ function latLngToVector3(lat: number, lng: number, radius: number): THREE.Vector
 }
 
 function GlobeModel() {
-  const globeRef = useRef<THREE.Mesh>(null);
+  const globeRef = useRef<THREE.Group>(null);
 
   useFrame((_, delta) => {
     if (globeRef.current) {
