@@ -1,16 +1,36 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import StatsCards from "@/components/dashboard/StatsCards";
+import BinGlobe from "@/components/dashboard/BinGlobe";
+import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
+import WorkerPanel from "@/components/dashboard/WorkerPanel";
+import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const [activeSection, setActiveSection] = useState("overview");
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background grid-bg">
+      <DashboardSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <main className="ml-[240px] p-6 transition-all duration-300">
+        <DashboardHeader />
+        <StatsCards />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mt-3">
+          <div className="lg:col-span-3">
+            <BinGlobe />
+          </div>
+          <div className="lg:col-span-2 grid grid-rows-2 gap-3">
+            <WorkerPanel />
+            <NotificationsPanel />
+          </div>
+        </div>
+        <div className="mt-3">
+          <AnalyticsCharts />
+        </div>
+      </main>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
