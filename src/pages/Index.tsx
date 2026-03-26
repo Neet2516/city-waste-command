@@ -14,7 +14,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <DashboardSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6 transition-all duration-200">
+      <main className="p-4 md:p-6 pt-16 md:pt-6 transition-all duration-200">
         <DashboardHeader />
         <StatsCards />
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mt-3">

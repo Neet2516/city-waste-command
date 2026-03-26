@@ -85,7 +85,7 @@ const Sidebar = () => {
             </div>
             {isOpen && (
               <div>
-                <h1 className="text-lg font-bold text-foreground">WasteMgmt</h1>
+                <h1 className="text-lg font-bold text-foreground">WMAP</h1>
                 <p className="text-xs text-muted-foreground">Admin Panel</p>
               </div>
             )}
@@ -140,10 +140,13 @@ const Sidebar = () => {
       </aside>
 
       {/* Main content offset */}
-      <div className={cn(
-        "transition-all duration-300 ease-in-out",
-        isOpen ? "md:ml-64" : "md:ml-20"
-      )} />
+      <div
+        aria-hidden="true"
+        className={cn(
+          "hidden md:block shrink-0 transition-all duration-300 ease-in-out",
+          isOpen ? "w-64" : "w-20"
+        )}
+      />
     </>
   );
 };

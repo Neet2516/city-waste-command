@@ -100,11 +100,6 @@ export const WasteManagementProvider = ({ children }) => {
   // Initialize data on mount
   useEffect(() => {
     fetchData();
-    
-    // Set up auto-refresh every 20 seconds
-    const interval = setInterval(fetchData, 20000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   const value = {

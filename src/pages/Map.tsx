@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useWasteManagement } from '../context/WasteManagementContext';
@@ -10,10 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { 
   RefreshCw,
   MapPin,
-  AlertTriangle,
-  CheckCircle,
-  Circle,
-  Filter
+  Filter,
+  LocateFixed,
+  Navigation,
+  Sparkles
 } from 'lucide-react';
 
 // Fix for Leaflet default icon issue
@@ -29,6 +29,10 @@ const MapView = () => {
   const [selectedWard, setSelectedWard] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to city center
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationPermission, setLocationPermission] = useState('prompt');
+  const [locationError, setLocationError] = useState('');
+  const [followUserLocation, setFollowUserLocation] = useState(true);
 
   // Filter bins based on selections
   const filteredBins = bins.filter(bin => {
@@ -94,10 +98,58 @@ const MapView = () => {
     }
   };
 
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationPermission('unsupported');
+      setLocationError('Geolocation is not supported by this browser.');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const nextLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+
+        setUserLocation(nextLocation);
+        setLocationPermission('granted');
+        setLocationError('');
+
+        if (followUserLocation) {
+          setMapCenter([nextLocation.lat, nextLocation.lng]);
+        }
+      },
+      (error) => {
+        setLocationPermission(error.code === 1 ? 'denied' : 'error');
+        setLocationError(
+          error.code === 1
+            ? 'Location access is blocked. Enable it to show your position on the map.'
+            : error.message || 'Unable to determine your location.'
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 10000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [followUserLocation]);
+
+  const centerOnUser = () => {
+    if (userLocation) {
+      setMapCenter([userLocation.lat, userLocation.lng]);
+      setFollowUserLocation(true);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+        <main className="p-4 md:p-6 pt-16 md:pt-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
             <div className="h-96 bg-muted rounded"></div>
@@ -110,7 +162,7 @@ const MapView = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+        <main className="p-4 md:p-6 pt-16 md:pt-6">
           <div className="text-center py-8">
             <div className="text-destructive font-semibold mb-2">Error Loading Map</div>
             <p className="text-muted-foreground mb-4">{error}</p>
@@ -124,38 +176,58 @@ const MapView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.12),_transparent_35%),linear-gradient(180deg,_rgba(2,6,23,0.02),_transparent_35%)]">
+      <main className="p-4 md:p-6 pt-16 md:pt-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">City Map View</h1>
-            <p className="text-sm text-muted-foreground">Interactive map of all waste bins</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={fetchData} 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
+        <Card className="mb-6 overflow-hidden border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 text-white shadow-xl">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Live waste operations map
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight md:text-4xl">City Map View</h1>
+                  <p className="mt-2 max-w-2xl text-sm text-white/75">
+                    Track waste bins, filter by ward or status, and pinpoint your own location to understand nearby collection activity.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                  <div className="text-xs uppercase tracking-wide text-white/60">Visible bins</div>
+                  <div className="mt-1 text-2xl font-semibold">{filteredBins.length}</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                  <div className="text-xs uppercase tracking-wide text-white/60">User location</div>
+                  <div className="mt-1 text-sm font-medium">
+                    {userLocation ? 'Active' : 'Waiting for permission'}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                  <div className="text-xs uppercase tracking-wide text-white/60">Data sync</div>
+                  <div className="mt-1 text-sm font-medium">Manual refresh only</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Controls */}
-        <Card className="mb-6">
+        <Card className="mb-6 border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
               Map Filters
             </CardTitle>
-            <CardDescription>Filter bins displayed on the map</CardDescription>
+            <CardDescription>
+              Filter bins displayed on the map. Location tracking stays on the user side and updates only when the browser reports movement.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {/* Ward Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filter by Ward</label>
@@ -164,7 +236,6 @@ const MapView = () => {
                     <SelectValue placeholder="All Wards" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Wards</SelectItem>
                     {wards.map((ward) => (
                       <SelectItem key={ward.id} value={ward.id.toString()}>
                         {ward.name} (Ward {ward.id})
@@ -182,7 +253,6 @@ const MapView = () => {
                     <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
                     <SelectItem value="Empty">Empty</SelectItem>
                     <SelectItem value="Filling">Filling</SelectItem>
                     <SelectItem value="Full">Full</SelectItem>
@@ -193,29 +263,72 @@ const MapView = () => {
               {/* Actions */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Actions</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
                     onClick={() => {
                       setSelectedWard('');
                       setSelectedStatus('');
                       setMapCenter([40.7128, -74.0060]);
+                      setFollowUserLocation(false);
                     }}
                   >
                     Clear Filters
                   </Button>
-                  <Button onClick={fetchData} variant="outline">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh Data
+                  <Button onClick={fetchData} variant="outline" className="gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Sync Data
+                  </Button>
+                  <Button onClick={centerOnUser} variant="secondary" className="gap-2" disabled={!userLocation}>
+                    <LocateFixed className="w-4 h-4" />
+                    Center on Me
                   </Button>
                 </div>
               </div>
             </div>
+
+            <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Navigation className="h-4 w-4 text-primary" />
+                  User location
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {userLocation
+                    ? `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`
+                    : 'Waiting for browser permission'}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="text-sm font-medium">Accuracy</div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {userLocation ? `~${Math.round(userLocation.accuracy)} meters` : 'N/A'}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="text-sm font-medium">Location status</div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {locationPermission === 'granted'
+                    ? 'Live tracking enabled'
+                    : locationPermission === 'denied'
+                      ? 'Permission denied'
+                      : locationPermission === 'unsupported'
+                        ? 'Not supported'
+                        : 'Requesting access'}
+                </div>
+              </div>
+            </div>
+
+            {locationError && (
+              <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-50 p-4 text-sm text-amber-900">
+                {locationError}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Summary */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-muted-foreground">
             Showing {filteredBins.length} of {bins.length} bins on map
           </div>
@@ -236,7 +349,7 @@ const MapView = () => {
         </div>
 
         {/* Map */}
-        <Card>
+        <Card className="border-border/60 shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
@@ -284,6 +397,23 @@ const MapView = () => {
                     </Popup>
                   </Marker>
                 ))}
+
+                {userLocation && (
+                  <CircleMarker
+                    center={[userLocation.lat, userLocation.lng]}
+                    radius={12}
+                    pathOptions={{
+                      color: '#38bdf8',
+                      fillColor: '#38bdf8',
+                      fillOpacity: 0.25,
+                      weight: 2,
+                    }}
+                  >
+                    <Tooltip direction="top" offset={[0, -10]} opacity={1} permanent={false}>
+                      You are here
+                    </Tooltip>
+                  </CircleMarker>
+                )}
               </MapContainer>
             </div>
           </CardContent>

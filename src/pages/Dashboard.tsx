@@ -56,7 +56,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+        <main className="p-4 md:p-6 pt-16 md:pt-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -73,7 +73,7 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+        <main className="p-4 md:p-6 pt-16 md:pt-6">
           <div className="text-center py-8">
             <div className="text-destructive font-semibold mb-2">Error Loading Dashboard</div>
             <p className="text-muted-foreground mb-4">{error}</p>
@@ -88,7 +88,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="md:ml-[240px] p-4 md:p-6 pt-16 md:pt-6">
+      <main className="p-4 md:p-6 pt-16 md:pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -103,9 +103,9 @@ const Dashboard = () => {
               className="flex items-center gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              Sync Data
             </Button>
-            <Badge variant="secondary">Live Data</Badge>
+            <Badge variant="secondary">Manual Sync</Badge>
           </div>
         </div>
 
