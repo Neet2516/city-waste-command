@@ -8,8 +8,11 @@ import {
   Users, 
   Settings, 
   Menu, 
-  X 
+  X,
+  Moon,
+  SunMedium
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
@@ -50,6 +53,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -90,14 +94,30 @@ const Sidebar = () => {
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="md:hidden"
-          >
-            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="h-9 w-9"
+              aria-label="Toggle theme"
+              title="Toggle theme"
+            >
+              {resolvedTheme === 'dark' ? (
+                <SunMedium className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="md:hidden h-9 w-9"
+            >
+              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -132,8 +152,9 @@ const Sidebar = () => {
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
           {isOpen && (
-            <div className="text-xs text-muted-foreground text-center">
-              Waste Management System v1.0
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>Waste Management System v1.0</span>
+              <span>{resolvedTheme === 'dark' ? 'Dark' : 'Light'}</span>
             </div>
           )}
         </div>
