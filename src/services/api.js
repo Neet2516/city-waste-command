@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL for the waste management API
-const API_BASE_URL = 'https://waste-management-cmup.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://waste-management-cmup.onrender.com';
 
 // Create axios instance with default configuration
 export const api = axios.create({
