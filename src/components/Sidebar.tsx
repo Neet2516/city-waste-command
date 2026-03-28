@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
+import {
   LayoutDashboard, 
   Trash2, 
   Map, 
+  Route,
   Building2, 
   Users, 
   Settings, 
@@ -31,6 +32,11 @@ const navigation = [
     name: 'Map View',
     href: '/map',
     icon: Map,
+  },
+  {
+    name: 'Driver Routes',
+    href: '/routes',
+    icon: Route,
   },
   {
     name: 'Ward Management',

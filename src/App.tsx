@@ -8,6 +8,7 @@ import { WasteManagementProvider } from "./context/WasteManagementContext.jsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Bins from "./pages/Bins.tsx";
 import MapView from "./pages/Map.tsx";
+import DriverRoutes from "./pages/DriverRoutes.tsx";
 import Wards from "./pages/Wards.tsx";
 import Workers from "./pages/Workers.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -31,6 +32,7 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/bins" element={<Bins />} />
                   <Route path="/map" element={<MapView />} />
+                  <Route path="/routes" element={<DriverRoutes />} />
                   <Route path="/wards" element={<Wards />} />
                   <Route path="/workers" element={<Workers />} />
                   <Route path="/settings" element={<Settings />} />

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import api from '../services/api';
+import { statsService } from '../services';
 import { 
   BarChart, 
   Bar, 
@@ -11,6 +12,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
+  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -31,8 +33,11 @@ const Dashboard = () => {
   const { stats, loading, error, fetchData } = useWasteManagement();
   const [timeRange, setTimeRange] = useState('30d');
   const [collectionData, setCollectionData] = useState<Array<{ time: string; collections: number }>>([]);
+  const [categoryData, setCategoryData] = useState<Array<{ category: string; total: number; full: number; filling: number; empty: number }>>([]);
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [trendsError, setTrendsError] = useState<string | null>(null);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   // Mock data for charts since we don't have historical data from API
   const binStatusData = [
@@ -92,7 +97,7 @@ const Dashboard = () => {
         if (!cancelled) {
           setCollectionData(normalized);
         }
-      } catch (err: any) {
+      } catch (err) {
         if (!cancelled) {
           setTrendsError(err?.response?.data?.message || err?.message || 'Failed to load trends data');
           setCollectionData([]);
@@ -110,6 +115,47 @@ const Dashboard = () => {
       cancelled = true;
     };
   }, [timeRange]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCategories = async () => {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+
+      try {
+        const response = await statsService.getCategoryStats();
+        const normalized = Array.isArray(response)
+          ? response.map((item) => ({
+              category: item._id,
+              total: Number(item.total ?? 0),
+              full: Number(item.full ?? 0),
+              filling: Number(item.filling ?? 0),
+              empty: Number(item.empty ?? 0),
+            }))
+          : [];
+
+        if (!cancelled) {
+          setCategoryData(normalized);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCategoriesError(err?.response?.data?.message || err?.message || 'Failed to load category stats');
+          setCategoryData([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const statusColors = {
     Full: 'bg-red-500',
@@ -322,31 +368,46 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Performance Metrics */}
-        <Card>
+        {/* Category Breakdown */}
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle>System Performance</CardTitle>
-            <CardDescription>Key performance indicators</CardDescription>
+            <CardTitle>Waste Category Breakdown</CardTitle>
+            <CardDescription>Bin distribution by waste type and status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">94%</div>
-                <div className="text-sm text-muted-foreground">Collection Efficiency</div>
+            {categoriesLoading ? (
+              <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+                Loading category stats...
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">2.1h</div>
-                <div className="text-sm text-muted-foreground">Avg Response Time</div>
+            ) : categoriesError ? (
+              <div className="flex h-[280px] items-center justify-center text-sm text-destructive text-center">
+                {categoriesError}
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">156</div>
-                <div className="text-sm text-muted-foreground">Bins/Day Capacity</div>
+            ) : (
+              <div className="overflow-x-hidden">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    data={categoryData}
+                    layout="vertical"
+                    margin={{ top: 8, right: 24, left: 24, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal vertical strokeOpacity={0.35} />
+                    <XAxis type="number" allowDecimals={false} tickMargin={8} />
+                    <YAxis
+                      type="category"
+                      dataKey="category"
+                      width={90}
+                      tickMargin={8}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="full" stackId="status" fill="#ef4444" radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="filling" stackId="status" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="empty" stackId="status" fill="#10b981" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">A+</div>
-                <div className="text-sm text-muted-foreground">System Rating</div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </main>

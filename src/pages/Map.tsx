@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { 
+import {
   RefreshCw,
   MapPin,
   Filter,
@@ -16,7 +16,6 @@ import {
   Sparkles
 } from 'lucide-react';
 
-// Fix for Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -28,31 +27,32 @@ const MapView = () => {
   const { bins, wards, loading, error, fetchData } = useWasteManagement();
   const [selectedWard, setSelectedWard] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to city center
-  const [userLocation, setUserLocation] = useState(null);
+  const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]);
+  const [userLocation, setUserLocation] = useState<any>(null);
   const [locationPermission, setLocationPermission] = useState('prompt');
   const [locationError, setLocationError] = useState('');
   const [followUserLocation, setFollowUserLocation] = useState(true);
 
-  // Filter bins based on selections
-  const filteredBins = bins.filter(bin => {
+  const filteredBins = bins.filter((bin) => {
     const matchesWard = !selectedWard || bin.wardId === parseInt(selectedWard);
     const matchesStatus = !selectedStatus || bin.status === selectedStatus;
     return matchesWard && matchesStatus;
   });
 
-  // Get status color
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Full': return '#ef4444'; // Red
-      case 'Filling': return '#f59e0b'; // Yellow
-      case 'Empty': return '#10b981'; // Green
-      default: return '#6b7280'; // Gray
+      case 'Full':
+        return '#ef4444';
+      case 'Filling':
+        return '#f59e0b';
+      case 'Empty':
+        return '#10b981';
+      default:
+        return '#6b7280';
     }
   };
 
-  // Create custom marker icon
-  const createMarkerIcon = (status) => {
+  const createMarkerIcon = (status: string) => {
     const color = getStatusColor(status);
     const size = status === 'Full' ? 16 : 12;
     return L.divIcon({
@@ -72,24 +72,35 @@ const MapView = () => {
     });
   };
 
-  // Fit map bounds to show all bins
   const MapBounds = () => {
     const map = useMap();
     useEffect(() => {
       if (filteredBins.length > 0) {
-        const bounds = L.latLngBounds(filteredBins.map(bin => [bin.lat, bin.lng]));
+        const bounds = L.latLngBounds(filteredBins.map((bin) => [bin.lat, bin.lng]));
         map.fitBounds(bounds.pad(0.3), { animate: true });
       }
     }, [filteredBins, map]);
     return null;
   };
 
-  // Handle ward selection
-  const handleWardSelect = (wardId) => {
+  const MapSizeFix = () => {
+    const map = useMap();
+
+    useEffect(() => {
+      const timer = window.setTimeout(() => {
+        map.invalidateSize();
+      }, 0);
+
+      return () => window.clearTimeout(timer);
+    }, [map, mapCenter, selectedWard, selectedStatus, filteredBins.length]);
+
+    return null;
+  };
+
+  const handleWardSelect = (wardId: string) => {
     setSelectedWard(wardId);
     if (wardId) {
-      // Find a bin in the selected ward to center the map
-      const wardBin = bins.find(bin => bin.wardId === parseInt(wardId));
+      const wardBin = bins.find((bin) => bin.wardId === parseInt(wardId));
       if (wardBin) {
         setMapCenter([wardBin.lat, wardBin.lng]);
       }
@@ -121,12 +132,12 @@ const MapView = () => {
           setMapCenter([nextLocation.lat, nextLocation.lng]);
         }
       },
-      (error) => {
-        setLocationPermission(error.code === 1 ? 'denied' : 'error');
+      (geoError) => {
+        setLocationPermission(geoError.code === 1 ? 'denied' : 'error');
         setLocationError(
-          error.code === 1
+          geoError.code === 1
             ? 'Location access is blocked. Enable it to show your position on the map.'
-            : error.message || 'Unable to determine your location.'
+            : geoError.message || 'Unable to determine your location.'
         );
       },
       {
@@ -178,7 +189,6 @@ const MapView = () => {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.12),_transparent_35%),linear-gradient(180deg,_rgba(2,6,23,0.02),_transparent_35%)]">
       <main className="p-4 md:p-6 pt-16 md:pt-6">
-        {/* Header */}
         <Card className="mb-6 overflow-hidden border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 text-white shadow-xl">
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -215,7 +225,6 @@ const MapView = () => {
           </CardContent>
         </Card>
 
-        {/* Controls */}
         <Card className="mb-6 border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -228,7 +237,6 @@ const MapView = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {/* Ward Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filter by Ward</label>
                 <Select value={selectedWard} onValueChange={handleWardSelect}>
@@ -245,7 +253,6 @@ const MapView = () => {
                 </Select>
               </div>
 
-              {/* Status Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filter by Status</label>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -260,12 +267,11 @@ const MapView = () => {
                 </Select>
               </div>
 
-              {/* Actions */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Actions</label>
                 <div className="flex flex-wrap gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setSelectedWard('');
                       setSelectedStatus('');
@@ -327,7 +333,6 @@ const MapView = () => {
           </CardContent>
         </Card>
 
-        {/* Summary */}
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-muted-foreground">
             Showing {filteredBins.length} of {bins.length} bins on map
@@ -348,7 +353,6 @@ const MapView = () => {
           </div>
         </div>
 
-        {/* Map */}
         <Card className="border-border/60 shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -358,19 +362,22 @@ const MapView = () => {
             <CardDescription>Real-time bin status across the city</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[500px] rounded-lg overflow-hidden border border-border">
+            <div style={{ height: '500px', width: '100%' }} className="rounded-lg overflow-hidden border border-border bg-muted/20">
               <MapContainer
-                center={mapCenter}
+                key="map"
+                center={mapCenter as [number, number]}
                 zoom={13}
                 className="h-full w-full"
                 zoomControl={true}
+                scrollWheelZoom={true}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <MapSizeFix />
                 <MapBounds />
-                
+
                 {filteredBins.map((bin) => (
                   <Marker
                     key={bin._id}
@@ -381,7 +388,10 @@ const MapView = () => {
                       <div className="p-3 min-w-[200px] text-sm space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-foreground">{bin.id}</span>
-                          <Badge variant="outline" className={`text-xs ${bin.status === 'Full' ? 'bg-red-100 text-red-800' : bin.status === 'Filling' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${bin.status === 'Full' ? 'bg-red-100 text-red-800' : bin.status === 'Filling' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}
+                          >
                             {bin.status}
                           </Badge>
                         </div>
@@ -419,7 +429,6 @@ const MapView = () => {
           </CardContent>
         </Card>
 
-        {/* Legend */}
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>Map Legend</CardTitle>
