@@ -5,6 +5,16 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     --background: 210 20% 98%;
     --foreground: 220 20% 10%;
@@ -114,10 +124,25 @@
   body {
     @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
     font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.05), transparent 28%),
+      radial-gradient(circle at top right, rgba(16, 185, 129, 0.05), transparent 22%),
+      hsl(var(--background));
   }
 
   code, .font-mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
