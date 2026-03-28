@@ -3,6 +3,7 @@ import { useWasteManagement } from '../context/WasteManagementContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import api from '../services/api';
 import { 
   BarChart, 
   Bar, 
@@ -28,7 +29,10 @@ import {
 
 const Dashboard = () => {
   const { stats, loading, error, fetchData } = useWasteManagement();
-  const [timeRange, setTimeRange] = useState('24h');
+  const [timeRange, setTimeRange] = useState('30d');
+  const [collectionData, setCollectionData] = useState<Array<{ time: string; collections: number }>>([]);
+  const [trendsLoading, setTrendsLoading] = useState(false);
+  const [trendsError, setTrendsError] = useState<string | null>(null);
 
   // Mock data for charts since we don't have historical data from API
   const binStatusData = [
@@ -36,16 +40,76 @@ const Dashboard = () => {
     { name: 'Filling', value: stats?.fillingBins || 0, color: '#f59e0b' },
     { name: 'Full', value: stats?.fullBins || 0, color: '#ef4444' }
   ];
+  const maxCollectionValue = Math.max(0, ...collectionData.map((item) => item.collections));
+  const yAxisMax = Math.max(10, Math.ceil(maxCollectionValue / 10) * 10);
+  const yAxisTicks = Array.from({ length: yAxisMax / 10 + 1 }, (_, index) => index * 10);
 
-  const collectionData = [
-    { time: '00:00', collections: 2 },
-    { time: '04:00', collections: 1 },
-    { time: '08:00', collections: 12 },
-    { time: '12:00', collections: 18 },
-    { time: '16:00', collections: 15 },
-    { time: '20:00', collections: 8 },
-    { time: '24:00', collections: 6 }
-  ];
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTrends = async () => {
+      setTrendsLoading(true);
+      setTrendsError(null);
+
+      try {
+        const response = await api.get('/stats/trends', {
+          params: { range: timeRange },
+        });
+        const payload = response.data ?? {};
+        const labels = Array.isArray(payload.labels)
+          ? payload.labels
+          : Array.isArray(payload.data?.labels)
+            ? payload.data.labels
+            : [];
+
+        const rawSeries = Array.isArray(payload.data)
+          ? payload.data
+          : Array.isArray(payload.data?.data)
+            ? payload.data.data
+            : Array.isArray(payload.data?.values)
+              ? payload.data.values
+              : Array.isArray(payload.data?.collections)
+                ? payload.data.collections
+                : Array.isArray(payload.values)
+                  ? payload.values
+                  : Array.isArray(payload.collections)
+                    ? payload.collections
+                    : Array.isArray(payload.counts)
+                      ? payload.counts
+                      : Array.isArray(payload.data?.counts)
+                        ? payload.data.counts
+                        : Array.isArray(payload.series?.[0]?.data)
+                          ? payload.series[0].data
+                          : Array.isArray(payload.data?.series?.[0]?.data)
+                            ? payload.data.series[0].data
+                            : [];
+
+        const normalized = labels.map((label: string, index: number) => ({
+          time: label,
+          collections: Number(rawSeries[index] ?? 0),
+        }));
+
+        if (!cancelled) {
+          setCollectionData(normalized);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setTrendsError(err?.response?.data?.message || err?.message || 'Failed to load trends data');
+          setCollectionData([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setTrendsLoading(false);
+        }
+      }
+    };
+
+    loadTrends();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [timeRange]);
 
   const statusColors = {
     Full: 'bg-red-500',
@@ -227,15 +291,33 @@ const Dashboard = () => {
                   ))}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={collectionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="collections" stroke="#3b82f6" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              {trendsLoading ? (
+                <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+                  Loading collection trends...
+                </div>
+              ) : trendsError ? (
+                <div className="flex h-[200px] items-center justify-center text-sm text-destructive text-center">
+                  {trendsError}
+                </div>
+              ) : (
+                <div className="overflow-x-hidden">
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={collectionData}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal vertical strokeOpacity={0.35} />
+                    <XAxis dataKey="time" interval="preserveStartEnd" minTickGap={20} tickMargin={8} />
+                    <YAxis
+                      domain={[0, yAxisMax]}
+                      ticks={yAxisTicks}
+                      allowDecimals={false}
+                      interval={0}
+                      width={40}
+                    />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="collections" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
