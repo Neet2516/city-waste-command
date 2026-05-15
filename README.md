@@ -25,7 +25,6 @@ We built an **AI-powered smart waste management system** that:
 * 📡 Tracks bins in real-time
 * 🗺️ Optimizes collection routes
 * 📊 Provides a **municipal dashboard** for monitoring
-* ♻️ Encourages efficient waste segregation
 
 ---
 
