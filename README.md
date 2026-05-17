@@ -12,7 +12,7 @@ Traditional waste management systems suffer from:
 
 * ❌ No waste segregation at source
 * ❌ Fixed, inefficient collection routes
-* ❌ No real-time monitoring
+* ❌ 
 * ❌ Lack of data-driven decision making
 
 ---
